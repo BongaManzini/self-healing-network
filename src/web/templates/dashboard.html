@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS // Self-Healing Network Defense & Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="top-nav">
+    <div class="logo-group">
+      <div class="pulse-beacon"></div>
+      <div class="logo-title">
+        <span class="cyber-brand">AEGIS</span>
+        <span class="badge-sub">SELF-HEALING NETMON</span>
+      </div>
+    </div>
+    
+    <div class="header-controls">
+      <div id="os-platform-badge" class="platform-badge">
+        <span class="platform-icon">🖥️</span>
+        <span id="platform-text">Detecting OS...</span>
+      </div>
+      
+      <div class="auto-heal-switch-container">
+        <span class="switch-label">Autonomous Self-Healing</span>
+        <label class="switch">
+          <input type="checkbox" id="auto-heal-toggle" checked onchange="toggleAutoHeal()">
+          <span class="slider round"></span>
+        </label>
+        <span id="auto-heal-status-badge" class="status-badge active">ONLINE</span>
+      </div>
+
+      <div class="connection-indicator">
+        <span class="live-dot"></span>
+        <span class="live-text">LIVE TELEMETRY</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-wrapper">
+    <!-- Top KPI Grid -->
+    <section class="kpi-grid">
+      <!-- Health Score Card -->
+      <div class="card kpi-card health-card">
+        <div class="card-header">
+          <span class="card-title">NETWORK HEALTH SCORE</span>
+          <span id="health-status-tag" class="status-pill status-healthy">HEALTHY</span>
+        </div>
+        <div class="health-gauge-box">
+          <div class="radial-gauge">
+            <svg viewBox="0 0 100 100" class="gauge-svg">
+              <circle class="gauge-bg" cx="50" cy="50" r="42"></circle>
+              <circle id="health-circle" class="gauge-fill" cx="50" cy="50" r="42"></circle>
+            </svg>
+            <div class="gauge-text">
+              <span id="health-score-val">100</span><span class="percent-sign">%</span>
+            </div>
+          </div>
+          <div class="health-meta">
+            <div class="meta-item">
+              <span class="meta-label">Threat Level</span>
+              <span id="threat-level-val" class="meta-val normal">LOW / NORMAL</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Healing Response</span>
+              <span class="meta-val highlight">Sub-second Auto-Remediation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Neutralized / Healed -->
+      <div class="card kpi-card">
+        <div class="card-header">
+          <span class="card-title">INTRUSIONS REMEDIATED</span>
+          <span class="icon-accent">🛡️</span>
+        </div>
+        <div class="kpi-value-row">
+          <span id="total-healed-val" class="kpi-number green-text">0</span>
+          <span class="kpi-subtext">out of <span id="total-detected-val">0</span> detected</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="healed-progress-bar" class="progress-bar" style="width: 100%;"></div>
+        </div>
+        <div class="card-footer-caption">
+          <span>Success Rate: <strong id="healing-rate-val">100%</strong></span>
+        </div>
+      </div>
+
+      <!-- Active Firewall Blocks -->
+      <div class="card kpi-card">
+        <div class="card-header">
+          <span class="card-title">CONTAINED HOSTS / BLOCKED</span>
+          <span class="icon-accent">⛔</span>
+        </div>
+        <div class="kpi-value-row">
+          <span id="blocked-count-val" class="kpi-number red-text">0</span>
+          <span class="kpi-subtext">malicious endpoints</span>
+        </div>
+        <div class="kpi-secondary-info">
+          <span>Quarantined Devices: <strong id="isolated-count-val" class="amber-text">0</strong></span>
+        </div>
+        <div class="card-footer-caption">
+          <span>Linux iptables & Windows Defender synced</span>
+        </div>
+      </div>
+
+      <!-- Real-time Traffic Throughput -->
+      <div class="card kpi-card">
+        <div class="card-header">
+          <span class="card-title">NETWORK I/O THROUGHPUT</span>
+          <span class="icon-accent">⚡</span>
+        </div>
+        <div class="throughput-stats">
+          <div class="t-stat">
+            <span class="t-arrow down">↓</span>
+            <div>
+              <span class="t-label">Inbound</span>
+              <span id="bytes-recv-val" class="t-val">0.0 KB/s</span>
+            </div>
+          </div>
+          <div class="t-stat">
+            <span class="t-arrow up">↑</span>
+            <div>
+              <span class="t-label">Outbound</span>
+              <span id="bytes-sent-val" class="t-val">0.0 KB/s</span>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer-caption">
+          <span>Active Sockets: <strong id="active-sockets-val">0</strong></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mid Section: Traffic Graph + Attack Simulator -->
+    <section class="mid-grid">
+      <!-- Live Traffic Graph -->
+      <div class="card chart-card">
+        <div class="card-header">
+          <div class="chart-title-group">
+            <span class="card-title">LIVE TELEMETRY STREAM</span>
+            <span class="card-subtitle">Throughput (KB/s) & packet rate over rolling time</span>
+          </div>
+          <span class="badge-tag">POLL: 2s</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="trafficChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Self-Healing Attack Simulator -->
+      <div class="card simulator-card">
+        <div class="card-header">
+          <span class="card-title">ATTACK & HEALING SIMULATOR</span>
+          <span class="status-pill status-sim">TEST RIG</span>
+        </div>
+        <p class="sim-desc">
+          Test autonomous intrusion response by triggering simulated attacks. The engine immediately detects anomalies and executes self-healing remediation chains across platforms.
+        </p>
+
+        <div class="sim-buttons-grid">
+          <button class="sim-btn btn-mitm" onclick="simulateAttack('mitm_attack')">
+            <span class="sim-btn-icon">⚡</span>
+            <div class="sim-btn-text">
+              <strong>ARP Poisoning / MITM</strong>
+              <small>Auto: Block + Flush ARP + Heal Gateway</small>
+            </div>
+          </button>
+
+          <button class="sim-btn btn-portscan" onclick="simulateAttack('port_scan')">
+            <span class="sim-btn-icon">🔍</span>
+            <div class="sim-btn-text">
+              <strong>Port Scan Sweep</strong>
+              <small>Auto: Firewall Drop + Port Lockdown</small>
+            </div>
+          </button>
+
+          <button class="sim-btn btn-dns" onclick="simulateAttack('dns_attack')">
+            <span class="sim-btn-icon">🌐</span>
+            <div class="sim-btn-text">
+              <strong>DNS Poisoning</strong>
+              <small>Auto: Flush DNS + Force 1.1.1.1 Safe Resolver</small>
+            </div>
+          </button>
+
+          <button class="sim-btn btn-malware" onclick="simulateAttack('malware')">
+            <span class="sim-btn-icon">☣</span>
+            <div class="sim-btn-text">
+              <strong>Malware C2 Beacon</strong>
+              <small>Auto: Kill PID + Block C2 + Host Quarantine</small>
+            </div>
+          </button>
+
+          <button class="sim-btn btn-exfil" onclick="simulateAttack('data_exfiltration')">
+            <span class="sim-btn-icon">📤</span>
+            <div class="sim-btn-text">
+              <strong>Data Exfiltration Burst</strong>
+              <small>Auto: Blackhole Remote IP + Restrict Host</small>
+            </div>
+          </button>
+
+          <button class="sim-btn btn-ddos" onclick="simulateAttack('ddos_flood')">
+            <span class="sim-btn-icon">🌊</span>
+            <div class="sim-btn-text">
+              <strong>SYN / Connection Flood</strong>
+              <small>Auto: Volumetric Firewall Drop</small>
+            </div>
+          </button>
+        </div>
+
+        <div id="simulation-feedback" class="sim-feedback hidden">
+          <span id="sim-feedback-text">Executing test...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs Container for Deep Inspection -->
+    <section class="tabs-container card">
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('incidents-tab')">🚨 Live Security Incidents & Self-Healing Log</button>
+        <button class="tab-btn" onclick="switchTab('firewall-tab')">🧱 Firewall & Quarantine Tables</button>
+        <button class="tab-btn" onclick="switchTab('sockets-tab')">🔌 Network Sockets & Adapters</button>
+        <button class="tab-btn" onclick="switchTab('tools-tab')">🛠️ Emergency Healing Tools</button>
+      </div>
+
+      <!-- Tab 1: Incidents -->
+      <div id="incidents-tab" class="tab-content active">
+        <div class="table-wrapper">
+          <table class="cyber-table">
+            <thead>
+              <tr>
+                <th>Incident ID</th>
+                <th>Timestamp</th>
+                <th>Threat Type</th>
+                <th>Severity</th>
+                <th>Attacker IP</th>
+                <th>Victim / Target</th>
+                <th>Self-Healing Actions Executed</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="incidents-tbody">
+              <tr>
+                <td colspan="8" class="text-center empty-state">No intrusions detected yet. System secure.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 2: Firewall & Quarantine -->
+      <div id="firewall-tab" class="tab-content">
+        <div class="split-tables-grid">
+          <!-- Blocked IPs Table -->
+          <div class="sub-table-card">
+            <div class="sub-table-header">
+              <h3>Currently Blocked IPs</h3>
+              <div class="quick-add-group">
+                <input type="text" id="manual-block-ip" placeholder="e.g. 198.51.100.99" class="cyber-input">
+                <button class="cyber-btn btn-danger" onclick="manualBlockIP()">Block IP</button>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="cyber-table">
+                <thead>
+                  <tr>
+                    <th>Blocked IP Address</th>
+                    <th>Target Rule</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="blocked-ips-tbody">
+                  <tr><td colspan="3" class="text-center empty-state">No blocked IPs</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Isolated Devices Table -->
+          <div class="sub-table-card">
+            <div class="sub-table-header">
+              <h3>Quarantined Devices</h3>
+              <button class="cyber-btn btn-warning" onclick="restoreAllDevices()">Restore All Quarantined</button>
+            </div>
+            <div class="table-wrapper">
+              <table class="cyber-table">
+                <thead>
+                  <tr>
+                    <th>Device IP</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="isolated-devices-tbody">
+                  <tr><td colspan="3" class="text-center empty-state">No isolated devices</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: Sockets & Adapters -->
+      <div id="sockets-tab" class="tab-content">
+        <div class="adapters-summary-row" id="adapters-summary-cards">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="sub-table-header mt-4">
+          <h3>Active Network Sockets & Connections</h3>
+          <button class="cyber-btn btn-secondary" onclick="fetchActiveSockets()">Refresh Sockets</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="cyber-table">
+            <thead>
+              <tr>
+                <th>Proto</th>
+                <th>Local Address</th>
+                <th>Remote Address</th>
+                <th>State</th>
+                <th>PID / Process</th>
+                <th>Firewall Status</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody id="connections-tbody">
+              <tr><td colspan="7" class="text-center empty-state">Loading active connections...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 4: Emergency Healing Tools -->
+      <div id="tools-tab" class="tab-content">
+        <div class="tools-grid">
+          <div class="tool-card">
+            <div class="tool-icon">🌐</div>
+            <div class="tool-content">
+              <h4>Purge & Heal DNS Cache</h4>
+              <p>Clears poisoned resolver caches and forces secure upstream resolution (Cloudflare 1.1.1.1 / Google 8.8.8.8).</p>
+              <button class="cyber-btn btn-primary" onclick="triggerManualDNSHealing()">Execute DNS Healing</button>
+            </div>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-icon">🔄</div>
+            <div class="tool-content">
+              <h4>Purge & Heal ARP Table</h4>
+              <p>Flushes kernel neighbor tables (Linux `ip neigh flush` / Windows `arp -d *`) to stop MITM attacks.</p>
+              <button class="cyber-btn btn-primary" onclick="triggerManualARPHealing()">Execute ARP Healing</button>
+            </div>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-icon">🔓</div>
+            <div class="tool-content">
+              <h4>Flush Firewall Drops</h4>
+              <p>Unblocks all auto-quarantined malicious IPs and restores baseline firewall rules.</p>
+              <button class="cyber-btn btn-warning" onclick="unblockAllIPs()">Clear All Block Rules</button>
+            </div>
+          </div>
+
+          <div class="tool-card">
+            <div class="tool-icon">🧪</div>
+            <div class="tool-content">
+              <h4>Terminate Process</h4>
+              <p>Force kill a rogue backdoor or malicious socket by PID.</p>
+              <div class="quick-add-group">
+                <input type="number" id="manual-kill-pid" placeholder="Process PID" class="cyber-input" style="width: 140px;">
+                <button class="cyber-btn btn-danger" onclick="manualKillProcess()">Kill PID</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Notification Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
