@@ -207,6 +207,12 @@ class NetworkMonitor:
         blocked_ips = list(self.policy_engine.action_dispatcher.firewall.blocked_ips)
         isolated_devices = list(self.policy_engine.action_dispatcher.network.isolated_devices)
         
+        try:
+            from src.integrations.cpp_monitor import cpp_monitor_manager
+            cpp_status = cpp_monitor_manager.get_status()
+        except Exception:
+            cpp_status = {"is_connected": False, "connected_count": 0}
+
         return {
             "health": health_info,
             "platform": platform_info,
@@ -218,7 +224,8 @@ class NetworkMonitor:
             "isolated_count": len(isolated_devices),
             "recent_incidents": self.policy_engine.get_incidents(15),
             "audit_logs": self.policy_engine.get_audit_log(15),
-            "active_connections_count": latest_sample.get("total_connections", 0)
+            "active_connections_count": latest_sample.get("total_connections", 0),
+            "cpp_monitor": cpp_status
         }
 
     def get_interfaces(self) -> List[Dict[str, Any]]:

@@ -39,6 +39,11 @@
         <span class="live-dot"></span>
         <span class="live-text">LIVE TELEMETRY</span>
       </div>
+
+      <div class="connection-indicator" id="cpp-indicator">
+        <span class="live-dot" id="cpp-live-dot" style="background: #64748b; box-shadow: none;"></span>
+        <span class="live-text" id="cpp-live-text">C++ SENSOR: STANDBY</span>
+      </div>
     </div>
   </header>
 
@@ -227,6 +232,7 @@
         <button class="tab-btn active" onclick="switchTab('incidents-tab')">🚨 Live Security Incidents & Self-Healing Log</button>
         <button class="tab-btn" onclick="switchTab('firewall-tab')">🧱 Firewall & Quarantine Tables</button>
         <button class="tab-btn" onclick="switchTab('sockets-tab')">🔌 Network Sockets & Adapters</button>
+        <button class="tab-btn" onclick="switchTab('cpp-tab')">📡 C++ Monitor Sensor</button>
         <button class="tab-btn" onclick="switchTab('tools-tab')">🛠️ Emergency Healing Tools</button>
       </div>
 
@@ -337,7 +343,117 @@
         </div>
       </div>
 
-      <!-- Tab 4: Emergency Healing Tools -->
+      <!-- Tab 4: C++ Monitor Sensor Integration -->
+      <div id="cpp-tab" class="tab-content">
+        <div class="kpi-grid mb-4">
+          <div class="card kpi-card">
+            <div class="card-header">
+              <span class="card-title">C++ SENSOR AGENT STATUS</span>
+              <span id="cpp-agent-status-badge" class="status-pill status-healthy">STANDBY</span>
+            </div>
+            <div class="kpi-value-row">
+              <span id="cpp-platform-val" class="kpi-number highlight-text">Linux / Windows</span>
+            </div>
+            <div class="card-footer-caption">
+              <span>Host OS: <strong id="cpp-host-os">Autonomous Sniffer</strong></span>
+            </div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="card-header">
+              <span class="card-title">PACKETS SNIFFED</span>
+              <span class="icon-accent">📦</span>
+            </div>
+            <div class="kpi-value-row">
+              <span id="cpp-packets-val" class="kpi-number green-text">0</span>
+              <span class="kpi-subtext">raw frames</span>
+            </div>
+            <div class="card-footer-caption">
+              <span>Traffic Volume: <strong id="cpp-bytes-val">0 KB</strong></span>
+            </div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="card-header">
+              <span class="card-title">C++ THREATS REPORTED</span>
+              <span class="icon-accent">⚠️</span>
+            </div>
+            <div class="kpi-value-row">
+              <span id="cpp-threats-val" class="kpi-number amber-text">0</span>
+              <span class="kpi-subtext">alerts pushed</span>
+            </div>
+            <div class="card-footer-caption">
+              <span>Auto-Healed: <strong id="cpp-healed-val">100%</strong></span>
+            </div>
+          </div>
+
+          <div class="card kpi-card">
+            <div class="card-header">
+              <span class="card-title">ACTIVE INTERFACE</span>
+              <span class="icon-accent">🌐</span>
+            </div>
+            <div class="kpi-value-row">
+              <span id="cpp-iface-val" class="kpi-number cyan-text">eth0</span>
+            </div>
+            <div class="card-footer-caption">
+              <span>Last Heartbeat: <strong id="cpp-heartbeat-val">Never</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub-table-header">
+          <h3>Connected C++ Monitor Agents</h3>
+          <div class="quick-add-group">
+            <button class="cyber-btn btn-secondary" onclick="syncCPPRules()">Sync Firewall Rules to C++</button>
+            <button class="cyber-btn btn-primary" onclick="simulateCPPAlert('port_scan')">Simulate C++ Port Scan</button>
+            <button class="cyber-btn btn-danger" onclick="simulateCPPAlert('mitm_attack')">Simulate C++ MITM</button>
+          </div>
+        </div>
+
+        <div class="table-wrapper mb-4">
+          <table class="cyber-table">
+            <thead>
+              <tr>
+                <th>Monitor ID</th>
+                <th>Platform OS</th>
+                <th>Interface</th>
+                <th>Packets Sniffed</th>
+                <th>Bandwidth Rate</th>
+                <th>Threats Detected</th>
+                <th>Last Seen</th>
+                <th>Link Status</th>
+              </tr>
+            </thead>
+            <tbody id="cpp-monitors-tbody">
+              <tr><td colspan="8" class="text-center empty-state">No C++ monitor agent connected. Start `network_monitor` in terminal to connect.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sub-table-header">
+          <h3>Recent C++ Threat Ingestions & Autonomous Healing Stream</h3>
+        </div>
+        <div class="table-wrapper">
+          <table class="cyber-table">
+            <thead>
+              <tr>
+                <th>Alert ID</th>
+                <th>Timestamp</th>
+                <th>Sensor Origin</th>
+                <th>Threat Pattern</th>
+                <th>Attacker IP</th>
+                <th>Target Device</th>
+                <th>Self-Healing Result</th>
+              </tr>
+            </thead>
+            <tbody id="cpp-alerts-tbody">
+              <tr><td colspan="7" class="text-center empty-state">No alerts received from C++ monitor yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab 5: Emergency Healing Tools -->
       <div id="tools-tab" class="tab-content">
         <div class="tools-grid">
           <div class="tool-card">

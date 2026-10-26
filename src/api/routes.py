@@ -5,9 +5,10 @@ Flask application factory and primary route definitions for Self-Healing Network
 import os
 from datetime import datetime
 from flask import Flask, render_template, jsonify
-from src.api.endpoints.anomaly import anomaly_bp
+from src.api.endpoints.anomaly import anomaly_bp, policy_engine
 from src.api.endpoints.actions import actions_bp
 from src.api.endpoints.monitor import monitor_bp
+from src.integrations.cpp_monitor import cpp_monitor_bp, cpp_monitor_manager
 from src.config.settings import Settings
 
 def create_app(config: Settings = None) -> Flask:
@@ -26,10 +27,14 @@ def create_app(config: Settings = None) -> Flask:
     )
     app.config.from_object(config)
     
+    # Link policy engine to integration manager
+    cpp_monitor_manager.set_policy_engine(policy_engine)
+    
     # Register blueprints
     app.register_blueprint(anomaly_bp, url_prefix='/api/anomaly')
     app.register_blueprint(actions_bp, url_prefix='/api/actions')
     app.register_blueprint(monitor_bp, url_prefix='/api/monitor')
+    app.register_blueprint(cpp_monitor_bp, url_prefix='/api/integrations/cpp-monitor')
     
     # Web Dashboard Alternative
     @app.route('/')
@@ -72,6 +77,11 @@ def create_app(config: Settings = None) -> Flask:
                 "actions_heal_arp": "POST /api/actions/heal-arp",
                 "actions_terminate_process": "POST /api/actions/terminate-process",
                 "actions_status": "GET /api/actions/status",
+                "cpp_monitor_status": "GET /api/integrations/cpp-monitor/status",
+                "cpp_monitor_heartbeat": "POST /api/integrations/cpp-monitor/heartbeat",
+                "cpp_monitor_alert": "POST /api/integrations/cpp-monitor/alert",
+                "cpp_monitor_sync_rules": "GET /api/integrations/cpp-monitor/sync-rules",
+                "cpp_monitor_simulate": "POST /api/integrations/cpp-monitor/simulate-alert",
                 "health": "GET /health"
             }
         }

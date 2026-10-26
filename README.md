@@ -151,6 +151,13 @@ Open your browser to `http://localhost:5000` to access the Cyber-Defense Web Ope
 - `POST /api/actions/terminate-process` — Terminate malicious process by PID.
 - `GET /api/actions/status` — Current firewall and quarantine status.
 
+### C++ Network Monitor Sensor Integration
+- `POST /api/integrations/cpp-monitor/alert` — Ingest threat alert from C++ Network Monitor sensor (Linux/Windows) and trigger autonomous self-healing.
+- `POST /api/integrations/cpp-monitor/telemetry` — Ingest heartbeat, packet count, and bandwidth metrics from C++ sensor.
+- `GET /api/integrations/cpp-monitor/status` — Query connection health, active C++ agents, and recent alerts.
+- `GET /api/integrations/cpp-monitor/sync-rules` — Provide active firewall blocked IPs and policies to synchronize C++ monitor in-memory blacklists.
+- `POST /api/integrations/cpp-monitor/simulate-alert` — Trigger synthetic alert to test C++ integration pipeline from web UI or scripts.
+
 ---
 
 ## Testing

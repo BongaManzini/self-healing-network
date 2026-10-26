@@ -196,6 +196,11 @@ function updateDashboardUI(data) {
   // 9. Update Blocked IPs & Isolated Devices Tables
   renderBlockedIPsTable(data.blocked_ips || []);
   renderIsolatedDevicesTable(data.isolated_devices || []);
+
+  // 10. Update C++ Network Monitor Status
+  if (data.cpp_monitor) {
+    updateCPPMonitorUI(data.cpp_monitor);
+  }
 }
 
 // Render Incidents Table
@@ -560,5 +565,148 @@ function switchTab(tabId) {
   if (tabId === 'sockets-tab') {
     fetchInterfaces();
     fetchActiveSockets();
+  }
+}
+
+// ==========================================
+// C++ Network Monitor Integration UI
+// ==========================================
+
+function updateCPPMonitorUI(cpp) {
+  if (!cpp) return;
+
+  const indicatorDot = document.getElementById('cpp-live-dot');
+  const indicatorText = document.getElementById('cpp-live-text');
+  const agentBadge = document.getElementById('cpp-agent-status-badge');
+
+  if (cpp.is_connected) {
+    if (indicatorDot) {
+      indicatorDot.style.background = '#10b981';
+      indicatorDot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.7)';
+    }
+    if (indicatorText) indicatorText.innerText = 'C++ SENSOR: ONLINE';
+    if (agentBadge) {
+      agentBadge.className = 'status-pill status-healthy';
+      agentBadge.innerText = 'ONLINE / SNIFFING';
+    }
+  } else {
+    if (indicatorDot) {
+      indicatorDot.style.background = '#64748b';
+      indicatorDot.style.boxShadow = 'none';
+    }
+    if (indicatorText) indicatorText.innerText = 'C++ SENSOR: STANDBY';
+    if (agentBadge) {
+      agentBadge.className = 'status-pill status-sim';
+      agentBadge.innerText = 'STANDBY / LISTENING';
+    }
+  }
+
+  // Update primary monitor meta
+  const prim = cpp.primary_monitor;
+  if (prim) {
+    const platEl = document.getElementById('cpp-platform-val');
+    if (platEl) platEl.innerText = `${prim.platform}`;
+    const hostEl = document.getElementById('cpp-host-os');
+    if (hostEl) hostEl.innerText = `${prim.monitor_id} (PID live)`;
+    const ifaceEl = document.getElementById('cpp-iface-val');
+    if (ifaceEl) ifaceEl.innerText = prim.active_interface || 'eth0';
+  }
+
+  // Update KPI counters
+  const packEl = document.getElementById('cpp-packets-val');
+  if (packEl) packEl.innerText = (cpp.total_packets_ingested || 0).toLocaleString();
+
+  const bytesEl = document.getElementById('cpp-bytes-val');
+  if (bytesEl) {
+    const kb = ((cpp.total_bytes_ingested || 0) / 1024).toFixed(1);
+    bytesEl.innerText = `${kb} KB`;
+  }
+
+  const threatsEl = document.getElementById('cpp-threats-val');
+  if (threatsEl) threatsEl.innerText = cpp.total_threats_reported || 0;
+
+  const hbEl = document.getElementById('cpp-heartbeat-val');
+  if (hbEl) {
+    hbEl.innerText = cpp.last_heartbeat_time ? cpp.last_heartbeat_time.substring(11, 19) : 'Waiting...';
+  }
+
+  // Render Connected Monitors Table
+  const monTbody = document.getElementById('cpp-monitors-tbody');
+  if (monTbody && cpp.monitors) {
+    if (cpp.monitors.length === 0) {
+      monTbody.innerHTML = '<tr><td colspan="8" class="text-center empty-state">No C++ monitor agent connected. Start `network_monitor` in terminal to connect.</td></tr>';
+    } else {
+      monTbody.innerHTML = cpp.monitors.map(m => `
+        <tr>
+          <td><code>${m.monitor_id}</code></td>
+          <td><span class="action-pill">${m.platform}</span></td>
+          <td><code>${m.active_interface}</code></td>
+          <td>${(m.packets_captured || 0).toLocaleString()}</td>
+          <td>${(m.bandwidth_kbps || 0).toFixed(1)} KB/s</td>
+          <td><strong class="amber-text">${m.threats_detected || 0}</strong></td>
+          <td>${m.last_seen_iso ? m.last_seen_iso.substring(11, 19) : '-'}</td>
+          <td>
+            ${m.status === 'online' ? '<span class="status-pill status-healthy">CONNECTED</span>' : '<span class="status-pill status-threat">OFFLINE</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // Render C++ Alerts Table
+  const alertsTbody = document.getElementById('cpp-alerts-tbody');
+  if (alertsTbody && cpp.recent_alerts) {
+    if (cpp.recent_alerts.length === 0) {
+      alertsTbody.innerHTML = '<tr><td colspan="7" class="text-center empty-state">No threat alerts received from C++ monitor yet.</td></tr>';
+    } else {
+      alertsTbody.innerHTML = cpp.recent_alerts.map(a => `
+        <tr>
+          <td><code>${a.id}</code></td>
+          <td>${a.timestamp ? a.timestamp.substring(11, 19) : 'Now'}</td>
+          <td><span class="action-pill">${a.platform || 'C++'}</span></td>
+          <td><strong class="red-text">${(a.threat_type || '').toUpperCase()}</strong></td>
+          <td><code>${a.source_ip}</code></td>
+          <td><code>${a.target_ip}</code></td>
+          <td>
+            ${a.self_healed ? '<span class="status-pill status-healthy">✓ REMEDIATED IN FIREWALL</span>' : '<span class="status-pill status-sim">RECORDED</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+}
+
+async function simulateCPPAlert(threatType = 'port_scan') {
+  try {
+    const res = await fetch('/api/integrations/cpp-monitor/simulate-alert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        threat_type: threatType,
+        source_ip: threatType === 'mitm_attack' ? '192.168.1.199' : '198.51.100.88',
+        target_ip: '192.168.1.55'
+      })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`C++ Alert Ingested: ${threatType.toUpperCase()} auto-healed in host firewall!`, 'healed');
+      fetchSummary();
+    } else {
+      showToast(`Error: ${json.message}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Simulation failed: ${err.message}`, 'error');
+  }
+}
+
+async function syncCPPRules() {
+  try {
+    const res = await fetch('/api/integrations/cpp-monitor/sync-rules');
+    const json = await res.json();
+    if (json.success) {
+      showToast(`Synced ${json.blocked_count} firewall rules to C++ monitor agent`, 'info');
+    }
+  } catch (err) {
+    showToast(`Sync failed: ${err.message}`, 'error');
   }
 }
